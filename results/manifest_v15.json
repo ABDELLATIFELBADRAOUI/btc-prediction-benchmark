@@ -1,0 +1,33 @@
+{
+  "random_seed": 42,
+  "seeds_for_dl": [
+    42,
+    123,
+    456
+  ],
+  "split": {
+    "train_end": "2020-12-31",
+    "val_end": "2021-12-31",
+    "test_end": "2023-12-30",
+    "n_train": 1431,
+    "n_val": 365,
+    "n_test": 729
+  },
+  "xgb_best_config": {
+    "learning_rate": 0.2,
+    "max_depth": 6,
+    "n_estimators": 200
+  },
+  "phase_9_b1_onchain": false,
+  "phase_10_b4_daily_trends": false,
+  "library_versions": {
+    "numpy": "1.26.4",
+    "pandas": "2.2.2",
+    "xgboost": "2.0.3",
+    "tensorflow": "2.16.1",
+    "shap": "0.45.1",
+    "sklearn": "1.5.0",
+    "statsmodels": "0.14.2",
+    "scipy": "scipy"
+  }
+}

@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this software or data, please cite the article below."
+title: "Bitcoin price prediction: a reproducible benchmark with formal statistical testing and transaction-cost sensitivity"
+type: software
+authors:
+  - family-names: "El Badraoui"
+    given-names: "Abdellatif"
+    affiliation: "Engineering Sciences Laboratory, National School of Applied Sciences, Ibn Tofail University, Kenitra, Morocco"
+    email: "abdellatif.elbadraoui@uit.ac.ma"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO add
+  - family-names: "Mouhssine"
+    given-names: "Yassine"
+    affiliation: "LAMSAD, Hassan I University, Settat, Morocco"
+  - family-names: "El Alaoui"
+    given-names: "Abdelkader"
+    affiliation: "Rabat Business School, International University of Rabat, Rabat, Morocco"
+  - family-names: "Ouatik El Alaoui"
+    given-names: "Said"
+    affiliation: "Engineering Sciences Laboratory, National School of Applied Sciences, Ibn Tofail University, Kenitra, Morocco"
+license: MIT
+repository-code: "https://github.com/USERNAME/btc-prediction-benchmark"   # TODO
+# doi: "10.5281/zenodo.XXXXXXX"                                          # TODO after first release
+keywords:
+  - bitcoin
+  - cryptocurrency forecasting
+  - machine learning benchmark
+  - directional accuracy
+  - Diebold-Mariano test
+  - Pesaran-Timmermann test
+  - reproducibility

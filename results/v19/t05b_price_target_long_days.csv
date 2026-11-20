@@ -1,0 +1,5 @@
+model,highest forecast ($),long days,long days with P_t below the 2017-2023 high,highest close 2017-2023 ($),test days with P_t below that high,long days in 2024,long days in 2025,long days in 2026
+RF-price,64201.76380512918,78,78,67566.83,340,75,0,3
+XGB-price,64931.94140625,122,122,67566.83,340,101,0,21
+CNN-LSTM-price,71313.09114583333,36,36,67566.83,340,36,0,0
+GRU-Att-price,69116.47786458333,29,29,67566.83,340,29,0,0

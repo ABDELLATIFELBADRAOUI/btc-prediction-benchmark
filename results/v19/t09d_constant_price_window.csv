@@ -1,0 +1,2 @@
+changes,correct changes,replications,"P(correct >= 70), simulated","P(correct >= 70), binomial with probability 3/4","mean of the count, simulated","variance of the count, simulated","variance of the count, binomial"
+89,70,100000,0.22284,0.25412736572016453,66.74254,12.9176343484,16.6875

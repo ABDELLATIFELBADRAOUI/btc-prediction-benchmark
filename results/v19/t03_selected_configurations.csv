@@ -1,0 +1,9 @@
+model,selected,configurations tried,parameters,seconds
+RF-price,"max_depth=10, min_samples_leaf=5",6,,4.279094934463501
+XGB-price,"learning_rate=0.05, max_depth=4, n_estimators=200",27,,41.491782903671265
+CNN-LSTM-price,"learning_rate=0.0003, batch=32, epochs=3",4,26763.0,14.263532638549805
+GRU-Att-price,"learning_rate=0.0003, batch=64, epochs=6",4,20610.0,31.202125310897827
+RF-return,"max_depth=5, min_samples_leaf=1",6,,3.6758995056152344
+XGB-return,"learning_rate=0.05, max_depth=4, n_estimators=200",27,,20.528422832489014
+CNN-LSTM-return,"learning_rate=0.001, batch=32, epochs=1",4,25611.0,11.28810429573059
+GRU-Att-return,"learning_rate=0.001, batch=64, epochs=4",4,19458.0,22.848001956939697

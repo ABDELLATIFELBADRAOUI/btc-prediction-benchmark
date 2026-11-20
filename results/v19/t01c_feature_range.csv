@@ -1,0 +1,26 @@
+feature,set,test days above the 2017-2023 maximum (%),test days below the 2017-2023 minimum (%)
+open,level,67.49521988527725,0.0
+high,level,67.30401529636711,0.0
+low,level,66.63479923518165,0.0
+close,level,67.49521988527725,0.0
+volume,level,0.0,0.0
+market_cap,level,78.29827915869981,0.0
+log_return,stationary,0.0,0.0
+volatility_7d,stationary,0.0,0.0
+volatility_30d,stationary,0.0,0.0
+rsi_14,stationary,0.0,0.0
+ema_7,level,75.1434034416826,0.0
+ema_30,level,86.32887189292543,0.0
+macd,level,2.0076481835564053,1.7208413001912046
+macd_signal,level,3.0592734225621414,2.198852772466539
+bb_upper,level,77.62906309751433,0.0
+bb_lower,level,77.151051625239,0.0
+bb_width,stationary,0.0,0.0
+high_low_ratio,stationary,0.0,0.0
+close_open_ratio,stationary,0.0,0.0
+close_ema_7,stationary,0.0,0.0
+close_ema_30,stationary,0.0,0.0
+macd_close,stationary,0.0,0.0
+macd_signal_close,stationary,0.0,0.0
+bb_position,stationary,0.0,0.0
+volume_change,stationary,0.0,0.0

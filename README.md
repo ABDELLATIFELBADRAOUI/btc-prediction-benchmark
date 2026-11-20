@@ -1,82 +1,72 @@
-# Bitcoin price prediction — a reproducible benchmark
+# Directional accuracy under three definitions: code and results
 
-Code and data for **"Evaluating Machine Learning Models for Bitcoin Price Prediction: A Reproducible Benchmark with Formal Statistical Testing and Transaction-Cost Sensitivity"** (submitted to *SN Computer Science*).
+Code and result tables for the manuscript **"Directional Accuracy Is Three Different Measures: Closed Forms, No-Skill Reference Values and a Bitcoin Application"** by Abdellatif Elbadraoui, Yassine Mouhssine, Abdelkader El Alaoui and Said Ouatik El Alaoui (submitted).
 
-Seven models across four families are compared on seven years of daily BTC data (2017–2023) under a strict temporal split, with HLN-corrected Diebold–Mariano tests, Pesaran–Timmermann directional-skill tests, multi-seed reporting for the deep models, and a transaction-cost-aware trading simulation.
+The notebook compares nine one-day-ahead forecasts of the Bitcoin daily close over 1 January 2024 to 11 November 2026 (1,046 test days): the random walk and eight learned models. It computes directional accuracy in three ways (on the traded signal, on the change between consecutive price forecasts and on the change between consecutive return forecasts), scores forecasts that use no model in the same way, and runs the Monte Carlo experiments, the positive control and the calibrated tests of the manuscript.
 
-The headline finding — the **Directional Accuracy Pitfall** — is that on this data, error metrics, directional accuracy and trading utility measure different things: no model shows PT-detectable directional skill, and the best-RMSE model has nearly the worst Sharpe ratio.
-
-\---
+Release **v1.1.0** contains everything behind the numbers, tables and figures of the manuscript. Release v1.0.0 ([10.5281/zenodo.21827665](https://doi.org/10.5281/zenodo.21827665)) archived an earlier version of the study (notebook v16, data from 2017 to 2023 with Google Trends); its files remain available under the tag [v1.0.0](https://github.com/ABDELLATIFELBADRAOUI/btc-prediction-benchmark/tree/v1.0.0).
 
 ## Layout
 
 ```
-btc-prediction-benchmark/
-├── data/          btc\_features\_final.csv          (input — see data/README.md)
-├── notebooks/     bitcoin\_prediction\_benchmark\_v16.ipynb
-├── figures/       \*.png                           (generated)
-├── results/       \*.csv, manifest.json            (generated)
-├── requirements.txt
+notebooks/bitcoin_prediction_benchmark_v19.ipynb   analysis notebook, with the outputs of the reported run
+results/v19/                                       result tables (t01 to t16) and manifest_v19.json
+figures/v19/                                       figures drawn by the notebook
+figures/paper/                                     Figures 1 to 3 of the manuscript
+scripts/prepare_raw.py                             assembles the CoinMarketCap exports into one daily OHLCV series
+scripts/build_features.py                          computes the 19 features and the next-day close
+scripts/verify_dataset.py                          checks the 2017-2023 dataset of release v1.0.0
+scripts/make_v19.py                                writes the notebook from its cell definitions
+scripts/verify_v19.py                              recomputes headline numbers from the saved forecasts with its own code
+scripts/sign_test_power.py                         power of the exact sign test and its p-values under other references
+scripts/make_figures.py                            draws Figures 1 to 3 of the manuscript
+data/, raw/                                        inputs, not redistributed (see data/README.md and raw/README.md)
 ```
 
-## Running it
+## Data
+
+The price data are not redistributed: the provider's terms of use do not permit it. To rebuild the dataset:
+
+1. Export the daily Bitcoin history from CoinMarketCap (https://coinmarketcap.com) for 1 January 2017 to 12 November 2026, in segments, into `raw/cmc_exports/` (details in `raw/README.md`).
+2. Download the monthly 3-month Treasury bill rate (FRED series TB3MS, https://fred.stlouisfed.org/series/TB3MS) as `raw/fred_tb3ms.csv`, with the columns `observation_date,TB3MS`.
+3. Build the daily series and the features:
+
+   ```bash
+   python scripts/prepare_raw.py --indir raw/cmc_exports --end 2026-11-12
+   python scripts/build_features.py --ohlcv raw/btc_ohlcv_2017-01-01_2026-11-12.csv
+   ```
+
+   The first command writes `raw/btc_ohlcv_2017-01-01_2026-11-12.csv` (3,603 days; the two days missing from the export, 2019-11-26 and 2021-11-25, are interpolated). The second writes `data/btc_features_2017-01-01_2026-11-12_no_trends.csv` (3,572 rows, 2017-01-31 to 2026-11-11, 19 features, no Google Trends). Without `--end`, the two scripts build the 2017-2023 dataset of release v1.0.0.
+4. The notebook prints a fingerprint of the dataset (number of rows, first and last dates, moments of five columns) and stores it in `results/v19/manifest_v19.json` under `data_fingerprint`. A rebuilt dataset should give the same values.
+
+## Running the analysis
 
 ```bash
-pip install -r requirements.txt
-jupyter lab notebooks/bitcoin\_prediction\_benchmark\_v16.ipynb
+pip install -r requirements.txt jupyter      # Python 3.11
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=-1 \
+        notebooks/bitcoin_prediction_benchmark_v19.ipynb
 ```
 
-Run top to bottom. Paths resolve from the notebook's location; override with `BTC\_BENCHMARK\_ROOT` if you keep the data elsewhere. Phases 9 and 10 (on-chain and daily Google Trends robustness checks) need internet access and degrade gracefully without it.
+Paths resolve from the notebook's location; the environment variable `BTC_BENCHMARK_ROOT` overrides them. The reported run took about 38 minutes on two processor cores (`results/v19/manifest_v19.json` records the run, the settings and the library versions). `BTC_FAST=1` runs a reduced version to check the pipeline; its numbers are not those of the manuscript.
 
-Total runtime is a few minutes on a laptop CPU — the deep models are small (≈25k–36k parameters) and each takes 98–200 s per seed.
+The notebook writes the result tables to `results/v19/` and its figures to `figures/v19/`. Forecasts in price units go to `results/v19/_local/`, which is not published because it contains prices. Each table is described in the notebook cell that writes it.
 
-**Phase 12 must run clean.** It cross-checks the figures against the tables, verifies that per-regime RMSEs pool back to the full-sample RMSE, and confirms every manuscript figure exists. If it reports failures, do not archive the artefact or compile the paper.
+Then, from the repository root:
 
-## What each phase produces
+```bash
+python scripts/verify_v19.py                    # needs data/ and results/v19/_local/
+python scripts/sign_test_power.py results/v19   # needs results/v19/ only
+python scripts/make_figures.py                  # Figures 1 to 3; Fig. 2 needs data/ and results/v19/_local/
+```
 
-|Phase|Output|Used in|
-|-|-|-|
-|1|descriptive statistics, stationarity|Tables 2, 5; Fig. 1|
-|2|Random Walk, Random Forest, XGBoost + grid search|Table 6|
-|3|CNN-LSTM, GRU+Att, two walk-forward variants (3 seeds)|Tables 6, 8|
-|4|HLN-corrected DM tests, Pesaran–Timmermann tests|Tables 6, 7; Fig. 3|
-|5|long/short simulation at 0/10/50 bp, DA-vs-Sharpe scatter|Table 9; Figs. 4, 5, 6|
-|6|split-conformal intervals|**not reported — see below**|
-|7|TreeSHAP, feature ablation|Tables 10, 11; Figs. 7, 8|
-|8|multi-horizon, per-regime analysis|Tables 12, 13; Figs. 9, 10|
-|9–10|on-chain (B1) and daily Google Trends (B4) enrichments|§5.9|
-|11–12|manifest, summary, verification|—|
+`verify_v19.py` recomputes the headline numbers from the saved forecasts with its own code and reports how many differ from the tables (none for the reported run). `sign_test_power.py` computes, from the counts in `results/v19/t05_direction.csv`, the power of the exact sign test and its p-values when a rise has a probability of 0.51 or 0.49.
 
-## Known limitations of this artefact
-
-**Phase 6 (split-conformal) is not reported in the paper.** Its calibration set is in-sample: `xgb\_final` is refitted on train ∪ validation, so scoring `X\_val` re-scores data the model has seen. The residuals are memorised, the calibration quantile collapses, and empirical coverage falls to about 3% against a 90% nominal level. Doing this correctly requires fitting on the training window only and holding 2021 out as a genuine calibration set — a different experiment. The cells are retained for transparency but no conformal result should be quoted from them.
-
-**B4 (daily Google Trends) is not stable across fetches.** Google Trends normalises each requested window separately and returns slightly different sampled values on repeat calls, so the stitched daily series carries chunk-boundary scale artefacts and re-running Phase 10 will not reproduce the stored numbers exactly. The RMSE effect of this enrichment is small and not stable in sign; §5.9 of the paper reports it as such. Two outcomes are stable: DA does not improve, and `google\_trends` drops in the SHAP ranking.
-
-**The deep models are run in standard configurations, not tuned.** XGBoost is selected by exhaustive grid search over 27 configurations; the CNN-LSTM and GRU+Att are not searched. Part of the RMSE gap may therefore reflect search budget rather than architecture. This is stated as a limitation in the paper rather than papered over. Note also that the XGBoost grid search is only weakly identifying: all 27 configurations fall within about 3% of each other on a validation metric an order of magnitude worse than the eventual test RMSE, because 2021 sits far above the training price level.
-
-**Early stopping monitors the training loss.** The deep models are fitted directly on the combined train ∪ validation window with `monitor='loss'`; there is no separate validation-loss monitoring for these architectures.
-
-## Changes from v15
-
-1. Portable paths — no absolute Windows path anywhere.
-2. `fig3\_dm\_forest.png` now marks the Bonferroni-adjusted threshold |z| = 2.64 (α = 0.05/6 = 0.0083), the level the manuscript actually tests at. v15 drew the unadjusted |z| = 1.96.
-3. **The figure-rename step now overwrites its targets.** v15 skipped any file that already existed, so stale PNGs from earlier runs survived into the LaTeX build folder — this is what caused figures to disagree with tables in earlier drafts.
-4. The per-regime table prints all seven models instead of four, and checks that each row pools back to the full-sample RMSE. The computation always covered all seven; only the display was truncated.
-5. The final summary computes its numbers rather than hard-coding them, and reports the resolution of the PT test (SE(DA) ≈ 1.85 pp, so the design detects DA above roughly 53.6% at α = 0.05).
-6. Phase 6 flagged as not reported, with the reason stated inline.
-7. New Phase 12 verification cell.
-8. All stored outputs stripped, so nothing stale ships with the notebook.
-
-## Note on `results/`
-
-The CSVs here are from the v15 execution and are provided for reference; running the notebook regenerates all of them. Four files from that run are not included in this copy and should be added before archiving: `table7\_main\_results.csv`, `table15\_regimes.csv`, `table11\_conformal.csv`, `btc\_google\_trends\_daily.csv`. Also update `manifest\_v15.json`, whose `phase\_9\_b1\_onchain` and `phase\_10\_b4\_daily\_trends` flags read `false` although both phases ran — re-running Phase 11 regenerates it correctly.
+The deep-learning models use the seeds 42, 123 and 456. Two complete runs on the same machine gave identical model tables; on other hardware or library builds, the results of the deep-learning models can differ slightly.
 
 ## Citation
 
-Bibliography and manuscript source are in `paper/`. Please cite the published article once it appears; until then, cite this repository and its Zenodo DOI.
+Please cite the archived software through its concept DOI, which always resolves to the latest version: [10.5281/zenodo.21827664](https://doi.org/10.5281/zenodo.21827664). `CITATION.cff` gives the metadata.
 
 ## License
 
-Suggested: MIT for the code, CC-BY-4.0 for the data and figures. Add a `LICENSE` file before publishing — Zenodo will ask for one.
-
+MIT for the code (see `LICENSE`). The license does not cover the price data, which are not included.

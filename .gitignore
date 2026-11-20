@@ -1,0 +1,19 @@
+# Keep figures/ and results/ tracked: they are part of the artefact.
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+.DS_Store
+Thumbs.db
+# Never published: the vendor exports and the datasets rebuilt from them (see
+# raw/README.md and data/README.md), the forecasts in price units, the daily
+# Google Trends series and the manuscript sources
+raw/*
+!raw/README.md
+data/*.csv
+results/*/_local/
+results/btc_google_trends_daily.csv
+paper/
+paper_v5/

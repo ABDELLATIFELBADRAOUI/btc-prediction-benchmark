@@ -1,30 +1,33 @@
 cff-version: 1.2.0
-message: "If you use this software or data, please cite the article below."
-title: "Bitcoin price prediction: a reproducible benchmark with formal statistical testing and transaction-cost sensitivity"
+message: "If you use this software, please cite it using the metadata from this file."
+title: "Directional accuracy under three definitions: code and results for a Bitcoin application"
+abstract: "Code and result tables for the manuscript 'Directional Accuracy Is Three Different Measures: Closed Forms, No-Skill Reference Values and a Bitcoin Application'. The notebook compares nine one-day-ahead forecasts of the Bitcoin daily close over 1 January 2024 to 11 November 2026, computes directional accuracy in three ways, and runs the Monte Carlo experiments, the positive control and the calibrated tests of the manuscript. The price data are not redistributed; the scripts rebuild them from the provider's exports."
 type: software
 authors:
-  - family-names: "El Badraoui"
+  - family-names: "Elbadraoui"
     given-names: "Abdellatif"
-    affiliation: "Engineering Sciences Laboratory, National School of Applied Sciences, Ibn Tofail University, Kenitra, Morocco"
+    affiliation: "Engineering Sciences Laboratory, Ibn Tofail University, Kenitra, Morocco"
     email: "abdellatif.elbadraoui@uit.ac.ma"
-    # orcid: "https://orcid.org/0009-0008-1779-7980"   # TODO add
+    orcid: "https://orcid.org/0009-0008-1779-7980"
   - family-names: "Mouhssine"
     given-names: "Yassine"
-    affiliation: "LAMSAD, Hassan I University, Settat, Morocco"
+    affiliation: "Laboratory of Analyzing and Modeling Systems for Decision Support (LAMSAD), Hassan I University, Settat, Morocco"
   - family-names: "El Alaoui"
     given-names: "Abdelkader"
-    affiliation: "Rabat Business School, International University of Rabat, Rabat, Morocco"
+    affiliation: "Rabat Business School, International University of Rabat (UIR), Rabat, Morocco"
   - family-names: "Ouatik El Alaoui"
     given-names: "Said"
-    affiliation: "Engineering Sciences Laboratory, National School of Applied Sciences, Ibn Tofail University, Kenitra, Morocco"
+    affiliation: "Engineering Sciences Laboratory, Ibn Tofail University, Kenitra, Morocco"
+version: "1.1.0"
+date-released: "2026-11-20"
+doi: "10.5281/zenodo.21827664"
 license: MIT
-repository-code: "https://github.com/ABDELLATIFELBADRAOUI/btc-prediction-benchmark"   # TODO
- doi: "10.5281/zenodo.21827664"                                          # TODO after first release
+repository-code: "https://github.com/ABDELLATIFELBADRAOUI/btc-prediction-benchmark"
 keywords:
-  - bitcoin
-  - cryptocurrency forecasting
-  - machine learning benchmark
   - directional accuracy
-  - Diebold-Mariano test
+  - forecast evaluation
   - Pesaran-Timmermann test
+  - sign test
+  - Bitcoin
+  - machine learning
   - reproducibility

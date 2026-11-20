@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-build_features.py -- rebuild btc_features_final.csv from the primary sources.
+build_features.py -- rebuild btc_features_final.csv from the primary sources,
+or build the same features without Google Trends for another window.
 
 The vendor exports are not redistributed with this repository (their terms of use
 do not permit it), so this script plus scripts/verify_dataset.py is what lets a
@@ -8,7 +9,8 @@ reader reconstruct the exact dataset behind every number in the manuscript.
 
 Inputs
 ------
-  --ohlcv    daily BTC OHLCV export, 2017-01-01 to 2023-12-31, 2556 rows.
+  --ohlcv    daily BTC OHLCV series written by scripts/prepare_raw.py;
+             2017-01-01 to 2023-12-31, 2556 rows, for the manuscript dataset.
              Columns: date, open, high, low, close, volume, market_cap
              Source: CoinMarketCap. The export is capped per request, so it is
              taken in segments and concatenated chronologically. Two dates
@@ -19,17 +21,28 @@ Inputs
              frequency (84 rows), 2017-01 to 2023-12, linearly interpolated to
              daily by this script.
              Columns: date, google_trends
+             Optional. Without it the google_trends column is left out (19
+             features). Interpolating a monthly series to daily values uses the
+             following month's value, which is not yet known on that day. The
+             price features use data up to the day itself only, apart from the
+             two interpolated days.
 
 Output
 ------
   data/btc_features_final.csv -- 2525 rows, 2017-01-31 to 2023-12-30,
   20 features + target_price + target_direction, no missing values.
+  Any other input (another window, or no --trends) goes by default to
+  data/btc_features_<first>_<last>[_no_trends].csv, named after the OHLCV
+  window, so the manuscript dataset is never overwritten.
 
 Usage
 -----
     python scripts/build_features.py --ohlcv raw/btc_ohlcv.csv \\
                                      --trends raw/google_trends_monthly.csv
     python scripts/verify_dataset.py            # confirm it matches the paper
+
+    # same features without Google Trends, extended window
+    python scripts/build_features.py --ohlcv raw/btc_ohlcv_2017-01-01_2026-11-12.csv
 
 FORMULA PROVENANCE
 ------------------
@@ -46,6 +59,7 @@ wrong and are flagged inline:
 
 import argparse
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -70,10 +84,16 @@ def rsi(close: pd.Series, period: int = RSI_PERIOD) -> pd.Series:
     return 100 - 100 / (1 + avg_gain / avg_loss)
 
 
-def build_features(ohlcv: pd.DataFrame, trends_daily: pd.Series) -> pd.DataFrame:
-    """Compute the 20 predictors and the target from raw OHLCV + daily trends."""
+def build_features(ohlcv: pd.DataFrame,
+                   trends_daily: Optional[pd.Series] = None) -> pd.DataFrame:
+    """Compute the predictors and the target from raw OHLCV (+ daily trends).
+
+    With trends_daily: the 20 predictors of the manuscript. Without: the same
+    predictors minus google_trends (19).
+    """
     df = ohlcv.copy()
-    df["google_trends"] = trends_daily.reindex(df.index)
+    if trends_daily is not None:
+        df["google_trends"] = trends_daily.reindex(df.index)
 
     close = df["close"]
 
@@ -107,7 +127,8 @@ def build_features(ohlcv: pd.DataFrame, trends_daily: pd.Series) -> pd.DataFrame
     df["target_direction"] = (df["target_price"] > close).astype(int)
 
     # Drop the rolling-window warm-up at the head and the undefined target at the
-    # tail: 2556 - 30 - 1 = 2525 rows, 2017-01-31 to 2023-12-30.
+    # tail: 2556 - 30 - 1 = 2525 rows, 2017-01-31 to 2023-12-30, for the
+    # manuscript window.
     df = df.dropna()
 
     ordered = ["open", "high", "low", "close", "volume", "market_cap",
@@ -116,6 +137,8 @@ def build_features(ohlcv: pd.DataFrame, trends_daily: pd.Series) -> pd.DataFrame
                "bb_upper", "bb_lower", "bb_width",
                "high_low_ratio", "close_open_ratio",
                "target_price", "target_direction"]
+    if trends_daily is None:
+        ordered.remove("google_trends")
     return df[ordered]
 
 
@@ -130,6 +153,10 @@ def load_trends_monthly_to_daily(path: Path, index: pd.DatetimeIndex) -> pd.Seri
     val_col = [c for c in t.columns if c != date_col][0]
     t[date_col] = pd.to_datetime(t[date_col])
     s = t.set_index(date_col)[val_col].astype(float).sort_index()
+    if index.min() < s.index.min() or index.max() > s.index.max() + pd.offsets.MonthEnd(1):
+        raise SystemExit(f"The Trends file covers {s.index.min().date()} to "
+                         f"{s.index.max().date()}, not the OHLCV window "
+                         f"{index.min().date()} to {index.max().date()}.")
     return s.reindex(s.index.union(index)).interpolate(method="linear").reindex(index)
 
 
@@ -137,9 +164,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ohlcv", required=True, type=Path)
-    ap.add_argument("--trends", required=True, type=Path)
-    ap.add_argument("--out", type=Path,
-                    default=Path(__file__).resolve().parent.parent / "data" / "btc_features_final.csv")
+    ap.add_argument("--trends", type=Path, default=None,
+                    help="monthly Google Trends file; omit it to build the "
+                         "features without google_trends")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="output file (default data/btc_features_final.csv for "
+                         "the manuscript dataset, a window-named file otherwise)")
     a = ap.parse_args()
 
     ohlcv = pd.read_csv(a.ohlcv, parse_dates=["date"]).set_index("date").sort_index()
@@ -148,20 +178,34 @@ def main() -> int:
         print(f"OHLCV file is missing columns: {sorted(missing)}")
         return 1
     print(f"raw OHLCV : {len(ohlcv)} rows, {ohlcv.index.min().date()} -> {ohlcv.index.max().date()}")
-    if len(ohlcv) != 2556:
+    manuscript = a.trends is not None and len(ohlcv) == 2556
+    if a.trends is not None and len(ohlcv) != 2556:
         print(f"  WARNING: expected 2556 rows; the published dataset will not reproduce")
 
-    trends = load_trends_monthly_to_daily(a.trends, ohlcv.index)
-    print(f"trends    : interpolated to {trends.notna().sum()} daily observations")
+    trends = None
+    if a.trends is not None:
+        trends = load_trends_monthly_to_daily(a.trends, ohlcv.index)
+        print(f"trends    : interpolated to {trends.notna().sum()} daily observations")
+    else:
+        print("trends    : none, google_trends left out")
 
     feats = build_features(ohlcv, trends)
     print(f"features  : {len(feats)} rows x {feats.shape[1]} columns, "
           f"{feats.index.min().date()} -> {feats.index.max().date()}")
 
+    if a.out is None:
+        name = ("btc_features_final.csv" if manuscript else
+                f"btc_features_{ohlcv.index.min().date()}_{ohlcv.index.max().date()}"
+                f"{'' if a.trends is not None else '_no_trends'}.csv")
+        a.out = Path(__file__).resolve().parent.parent / "data" / name
+
     a.out.parent.mkdir(parents=True, exist_ok=True)
     feats.to_csv(a.out, index=True, index_label="date")
     print(f"written   : {a.out}")
-    print("\nNow run:  python scripts/verify_dataset.py")
+    if manuscript:
+        print("\nNow run:  python scripts/verify_dataset.py")
+    else:
+        print("\nverify_dataset.py checks the manuscript dataset only.")
     return 0
 
 

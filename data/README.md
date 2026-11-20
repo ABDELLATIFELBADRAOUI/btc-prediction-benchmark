@@ -1,79 +1,41 @@
 # data/
 
-**This directory is intentionally empty in the public release.**
+**This directory is empty in the public repository.** The Bitcoin price series is not
+redistributed: the provider's terms of use do not permit republication of its exports.
+What is released instead is the code that rebuilds the dataset from them.
 
-The Bitcoin price series and the Google Trends attention series are not
-redistributed here: the providers' terms of use do not permit republication of
-their exports. What is released instead is everything needed to rebuild the
-dataset and to prove that your rebuild is identical to ours.
+## Dataset of release v1.1.0
 
-## To reproduce the benchmark
-
-1. **Acquire the raw price data.** Export daily BTC OHLCV (open, high, low,
-   close, volume, market cap) for 2017-01-01 to 2023-12-31 from CoinMarketCap
-   (https://coinmarketcap.com). The export is capped per request, so it must be
-   taken in segments and concatenated chronologically; the concatenated file has
-   2,556 daily rows. Two dates absent from the platform export (2019-11-26 and
-   2021-11-25) are filled by linear interpolation between adjacent observations.
-
-2. **Acquire the attention series.** Download Google Trends interest for the
-   query "bitcoin" over the same period at native monthly frequency
-   (84 months) from https://trends.google.com, then linearly interpolate to
-   daily. The manuscript is explicit that this is a low-pass monthly proxy, not
-   a true daily signal; the native daily variant used in robustness check B4 is
-   fetched at runtime by the notebook via `pytrends`.
-
-3. **Build the feature file.** Run `scripts/build_features.py` (see below) to
-   produce `data/btc_features_final.csv`: 2,525 rows after the rolling-window
-   computations, 20 features, no missing values.
-
-4. **Verify before you run anything.**
-
-   ```bash
-   python scripts/verify_dataset.py data/btc_features_final.csv
-   ```
-
-   This checks row count, date range, schema and the moments of every input
-   series against the values published in Table 2 of the manuscript. If it
-   passes, your dataset is the one the paper was computed from.
-
-## On `build_features.py`
-
-`scripts/build_features.py` rebuilds the feature file:
+`data/btc_features_2017-01-01_2026-11-12_no_trends.csv`: 3,572 daily rows,
+2017-01-31 to 2026-11-11, with the open, high, low and close prices, the volume, the
+market capitalisation, 13 features computed from them (19 features in all, no Google
+Trends), the next-day close and its direction. Build it from the CoinMarketCap
+exports (see
+`raw/README.md`):
 
 ```bash
-python scripts/build_features.py --ohlcv raw/btc_ohlcv.csv \
-                                 --trends raw/google_trends_monthly.csv
-python scripts/verify_dataset.py
+python scripts/prepare_raw.py --indir raw/cmc_exports --end 2026-11-12
+python scripts/build_features.py --ohlcv raw/btc_ohlcv_2017-01-01_2026-11-12.csv
 ```
 
-Every formula in it was verified by recomputing each column from the released
-file's own OHLC and comparing: all fifteen derived columns reproduce to
-floating-point precision (max relative error 1.1e-12).
+The notebook stores a fingerprint of the dataset (number of rows, first and last dates,
+moments of five columns) in `results/v19/manifest_v19.json` under `data_fingerprint`;
+a rebuilt dataset should give the same values.
 
-Two definitions are easy to get wrong and are flagged in the source:
+Two definitions are easy to get wrong and are flagged in `scripts/build_features.py`:
+`rsi_14` uses a simple 14-day rolling mean of gains and losses, not Wilder's smoothing,
+and `bb_width` is normalised by the 20-day middle band, not by the close. The first 30
+days are used by the rolling windows, and the last day has no next-day close.
 
-- **`rsi_14` uses a simple 14-day rolling mean** of gains and losses, not
-  Wilder's `ewm(alpha=1/14)` smoothing. The Wilder variant differs by several
-  RSI points and will not reproduce the published numbers.
-- **`bb_width` is normalised by the 20-day middle band**, not by the close.
+## Dataset of release v1.0.0
 
-Bollinger bands use a 20-day window at 2 standard deviations with pandas'
-default `ddof=1`. The head trim comes from `dropna()` after the rolling windows
-and the tail row from the undefined next-day target: 2556 - 30 - 1 = 2525 rows,
-2017-01-31 to 2023-12-30.
-
-## On the google_trends column
-
-Repeated Google Trends downloads of the same window return slightly different
-sampled values. `verify_dataset.py` therefore allows a 2% tolerance on that
-column and none on the others. A failure confined to `google_trends` means your
-attention series differs from ours within the provider's own sampling
-variability; the price-derived results are unaffected.
+Without `--end` and with `--trends`, the two scripts build `data/btc_features_final.csv`
+(2017 to 2023, with Google Trends), the input of notebook v16 in release v1.0.0;
+`scripts/verify_dataset.py` checks it.
 
 ## Sources
 
-- OHLCV — CoinMarketCap, https://coinmarketcap.com
-- Google Trends — https://trends.google.com and the `pytrends` API
-- On-chain metrics (robustness check B1) — CoinMetrics community data,
-  https://docs.coinmetrics.io — fetched at runtime by the notebook
+- Daily open, high, low, close, volume and market capitalisation: CoinMarketCap,
+  https://coinmarketcap.com
+- 3-month Treasury bill rate (risk-free rate of the trading results): FRED series TB3MS,
+  https://fred.stlouisfed.org/series/TB3MS
